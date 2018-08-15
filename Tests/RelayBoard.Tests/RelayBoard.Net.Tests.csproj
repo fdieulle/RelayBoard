@@ -8,7 +8,7 @@
     <ProjectGuid>{D4C2FFF1-57E6-47E7-BA49-2AC46B2B1EC3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RelayBoard.Net.Tests</RootNamespace>
+    <RootNamespace>RelayBoard.Tests</RootNamespace>
     <AssemblyName>RelayBoard.Net.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

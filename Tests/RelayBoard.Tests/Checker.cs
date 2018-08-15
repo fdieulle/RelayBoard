@@ -1,7 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 
-namespace RelayBoard.Net.Tests
+namespace RelayBoard.Tests
 {
     public static class Checker
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using RelayBoard.Core;
 
-namespace RelayBoard.Net.Tests
+namespace RelayBoard.Tests
 {
     public class RelayInputMock : IRelayInput
     {
