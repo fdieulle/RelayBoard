@@ -229,12 +229,12 @@ namespace RelayBoard
 
         public void Poll(DateTime now)
         {
-            if (_queue.Count <= 0) return;
+            if (_queue.Length <= 0) return;
 
             // Process enqueued callbacks
-            for (var i = 0; i < _queue.Count; i++)
-            for (var j = 0; j < _queue[i].Length; j++)
-                _queue[i][j](now);
+            for (var i = 0; i < _queue.Length; i++)
+                for (var j = 0; j < _queue[i].Length; j++)
+                    _queue[i][j](now);
             _queue.Reset();
         }
 

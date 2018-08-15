@@ -54,10 +54,13 @@ namespace RelayBoard
             _metricsOffset = metricsOffset;
         }
 
+        /// <summary>
+        /// Reset associated flag.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset()
         {
-            // Todo: Test both
+            // Todo: Test both performances but i suspect that the non commented is better because there is 1 load less
             *_flags = *_flags & ~_mask;
             //*_flags = (*_flags | _mask) ^ _mask;
         }

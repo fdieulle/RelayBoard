@@ -8,7 +8,7 @@ namespace RelayBoard.Core
         private T[] _array;
         private int _capacity, _index;
 
-        public int Count
+        public int Length
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => _index;
