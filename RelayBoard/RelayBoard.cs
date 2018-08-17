@@ -40,7 +40,7 @@ namespace RelayBoard
 
             var key = $"{iKey}-{oKey}";
             if (!_connectors.TryGetValue(key, out var connector))
-                _connectors.Add(key, new RelayConnector(key, inputInitializer, outputInitializer, _lazyInitializer, RemoveConnector));
+                _connectors.Add(key, connector = new RelayConnector(key, inputInitializer, outputInitializer, _lazyInitializer, RemoveConnector));
 
             return connector;
         }
