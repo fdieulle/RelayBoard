@@ -119,11 +119,12 @@ namespace RelayBoard
             #region Build Report
             _reports.Clear();
             _reports.AppendLine("=== Initialize");
-            _reports.AppendLine($"Total         Size: {totalSize / 1000.0} Ko");
             _reports.AppendLine($"Flags         Size: {flagsSize / 1000.0} Ko");
             _reports.AppendLine($"PulseProbe    Size: {pulseProbeSize / 1000.0} Ko");
             _reports.AppendLine($"PulseSource   Size: {pulseSourceSize / 1000.0} Ko");
             _reports.AppendLine($"PulseMasks    Size: {pulseMasksSizes / 1000.0} Ko");
+            _reports.AppendLine("--------------------------------");
+            _reports.AppendLine($"Total         Size: {totalSize / 1000.0} Ko");
             _reports.AppendLine("===");
             #endregion
         }
