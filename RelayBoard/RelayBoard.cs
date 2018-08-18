@@ -83,8 +83,6 @@ namespace RelayBoard
             // 2. For suscribers
             // 2.1 state size
             var pulseProbeSize = sizeof(PulseProbe) * _outputInitializers.Count;
-            // 2.2 extended state size
-            var pulseMetricsSize = _outputInitializers.Sum(p => p.Value.PulseMetricsSize);
 
             // 3. For producer
             // 3.1 structure layout size
@@ -92,7 +90,7 @@ namespace RelayBoard
             // 3.2 pImpulseMask size
             var pulseMasksSizes = _inputInitializers.Sum(p => p.Value.MaskLength);
 
-            var totalSize = flagsSize + pulseMetricsSize + pulseProbeSize + pulseSourceSize + pulseMasksSizes;
+            var totalSize = flagsSize + pulseProbeSize + pulseSourceSize + pulseMasksSizes;
 
             // Alocate the memory
             _globalMemory = Marshal.AllocHGlobal(totalSize);
@@ -110,11 +108,10 @@ namespace RelayBoard
             var pFlags = ptr + pulseSourceSize;
             var pPulseMask = ptr + pulseSourceSize + flagsSize;
             var pPulseProbe = (PulseProbe*)(ptr + pulseSourceSize + flagsSize + pulseMasksSizes);
-            var pPulseMetrics = (PulseMetrics*)(ptr + pulseSourceSize + flagsSize + pulseMasksSizes + pulseProbeSize);
 
             InstallFlags(pFlags, flagsSize);
-            InstallPulseProbs(pPulseProbe, pPulseMetrics, pFlags, _outputInitializers);
-            InstallPulseSources(pPulseSource, pFlags, pPulseMask, pPulseMetrics, _inputInitializers, _outputInitializers);
+            InstallPulseProbs(pPulseProbe, pFlags, _outputInitializers);
+            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializers, _outputInitializers);
 
             _runtimes.AddRange(_inputInitializers.Select(p => p.Value.CreateRuntime()));
             _queue.SetCapacity(_runtimes.Count);
@@ -125,7 +122,6 @@ namespace RelayBoard
             _reports.AppendLine($"Total         Size: {totalSize / 1000.0} Ko");
             _reports.AppendLine($"Flags         Size: {flagsSize / 1000.0} Ko");
             _reports.AppendLine($"PulseProbe    Size: {pulseProbeSize / 1000.0} Ko");
-            _reports.AppendLine($"PulseMetrics  Size: {pulseMetricsSize / 1000.0} Ko");
             _reports.AppendLine($"PulseSource   Size: {pulseSourceSize / 1000.0} Ko");
             _reports.AppendLine($"PulseMasks    Size: {pulseMasksSizes / 1000.0} Ko");
             _reports.AppendLine("===");
@@ -152,7 +148,6 @@ namespace RelayBoard
 
         private static void InstallPulseProbs(
             PulseProbe* pPulseProbe,
-            PulseMetrics* pPulseMetrics,
             byte* pFlags,
             Dictionary<string, OutputInitializer> outputs)
         {
@@ -161,7 +156,6 @@ namespace RelayBoard
 
             // Todo For now it's a simple implementation
             var ppp = pPulseProbe;
-            var ppm = (byte*)pPulseMetrics;
             foreach (var output in outputs.Values)
             {
                 var idx = output.Index;
@@ -169,13 +163,8 @@ namespace RelayBoard
                 var p = pFlags + offset;
                 var mask = 1 << (idx % Tools.NB_BITS_PER_BYTE);
 
-                *ppp = new PulseProbe(p, mask, (uint)(ppm - p));
-                output.Inject(ppp);
-
-                var ptrptr = (PulseSource**)(ppm + sizeof(PulseMetrics));
-                *(PulseMetrics*)ppm = new PulseMetrics(ptrptr);
-
-                ppm += output.PulseMetricsSize;
+                *ppp = new PulseProbe(p, mask);
+                output.Initialize(ppp);
                 ppp++;
             }
 
@@ -185,7 +174,6 @@ namespace RelayBoard
             PulseSource* pPulseSource,
             byte* pFlags,
             byte* pImpulseMask,
-            PulseMetrics* pPulseMetrics,
             Dictionary<string, InputInitializer> initializers,
             Dictionary<string, OutputInitializer> outputs)
         {
@@ -201,14 +189,6 @@ namespace RelayBoard
                 maskOffset += initializer.MaskLength;
 
                 initializer.Initialize(p);
-
-                var pgs = (byte*)pPulseMetrics;
-                foreach (var output in outputs.Values)
-                {
-                    if (output.HasInput(pair.Key))
-                        ((PulseMetrics*)pgs)->AddSender(p);
-                    pgs += output.PulseMetricsSize;
-                }
 
                 p++;
             }
@@ -226,6 +206,24 @@ namespace RelayBoard
         }
 
         #endregion
+
+        public IInputLinks GetInputLinks(IRelayInput input)
+        {
+            if (input == null) return null;
+
+            var iKey = input.Name ?? string.Empty;
+            _inputInitializers.TryGetValue(iKey, out var initializer);
+            return initializer;
+        }
+
+        public IOutputLinks GetOutputLinks(IRelayOutput output)
+        {
+            if (output == null) return null;
+
+            var oKey = output.Name ?? string.Empty;
+            _outputInitializers.TryGetValue(oKey, out var initializer);
+            return initializer;
+        }
 
         public void Poll(DateTime now)
         {

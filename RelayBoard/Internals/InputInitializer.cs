@@ -6,9 +6,8 @@ using RelayBoard.Core;
 
 namespace RelayBoard.Internals
 {
-    public unsafe class InputInitializer
+    public unsafe class InputInitializer : IInputLinks, IDisposable
     {
-        private readonly IRelayInput _input;
         private readonly ArrayEx<Action<DateTime>[]> _queue;
         private readonly Action<InputInitializer> _onDispose;
         private readonly Dictionary<string, OutputInitializer> _outputs = new Dictionary<string, OutputInitializer>();
@@ -17,7 +16,7 @@ namespace RelayBoard.Internals
         private PulseSource* _pulseSource;
         private Action<DateTime>[] _callbacks = new Action<DateTime>[0];
 
-        private bool IsInitialized => _mask.Length > 0;
+        private bool IsMaskBuilt => _mask.Length > 0;
 
         public string Key { get; }
 
@@ -28,7 +27,7 @@ namespace RelayBoard.Internals
         public InputInitializer(string key, IRelayInput input, ArrayEx<Action<DateTime>[]> queue, Action<InputInitializer> onDispose)
         {
             Key = key;
-            _input = input;
+            Input = input;
             _queue = queue;
             _onDispose = onDispose;
         }
@@ -43,7 +42,7 @@ namespace RelayBoard.Internals
         {
             _outputs.Remove(output.Key);
 
-            if (IsInitialized) // Todo: Do we need to keep this code in case of initlalize is call for each new connectons
+            if (IsMaskBuilt) // Todo: Do we need to keep this code in case of initlalize is call for each new connectons
             {
                 var mask = new BitArray(_mask.Length, true);
                 mask.Set(output.Index, false);
@@ -90,19 +89,32 @@ namespace RelayBoard.Internals
             // Keep producer pointer here to notify when the input trigger
             _pulseSource = producer;
 
-            // Build callbacks
+            // Build links and callbacks
+            Outputs = _outputs.Select(p => p.Value.Output).ToArray();
             _callbacks = _outputs.SelectMany(p => p.Value.Callbacks).Where(p => p != null).ToArray();
+
+            IsInitialized = true;
         }
 
         public InputRuntime CreateRuntime()
         {
-            return new InputRuntime(_pulseSource, _input, _callbacks, _queue);
+            return new InputRuntime(_pulseSource, Input, _callbacks, _queue);
         }
+
+        #region Implementation of IInputLinks
+
+        public bool IsInitialized { get; private set; }
+        public IRelayInput Input { get; }
+        public IRelayOutput[] Outputs { get; private set; }
+
+        #endregion
 
         public void Dispose()
         {
             _mask.Length = 0;
             _outputs.Clear();
+            Outputs = null;
+            IsInitialized = false;
             _onDispose(this);
         }
     }

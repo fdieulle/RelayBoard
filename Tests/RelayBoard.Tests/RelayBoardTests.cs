@@ -71,23 +71,17 @@ namespace RelayBoard.Tests
 
         public bool IsInvalidated => _pulseProbe->IsFlaged;
 
-        public DateTime LastUpdateTimestamp => _pulseProbe->LastTimestamp;
-
         public void Reset() => _pulseProbe->Reset();
 
         #region Base implem
 
         private bool _isInvalidated;
-        private DateTime _lastTimestamp;
 
         public bool IsInvalidatedBase => _isInvalidated;
-
-        public DateTime LastUpdateTimestampBase => _lastTimestamp;
 
         public void Invalidate(DateTime timestamp)
         {
             _isInvalidated = true;
-            _lastTimestamp = timestamp;
         }
 
         public void ResetBase()

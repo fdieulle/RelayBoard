@@ -23,7 +23,21 @@ namespace RelayBoard
         void Initialize();
 
         /// <summary>
-        /// Dequeue call backs ad raise them.
+        /// Gets an interface which describes all <see cref="IRelayOutput"/> linked instances on a given <see cref="IRelayInput"/>.
+        /// </summary>
+        /// <param name="input">Input instance to get links</param>
+        /// <returns>Returns the linked list.</returns>
+        IInputLinks GetInputLinks(IRelayInput input);
+
+        /// <summary>
+        /// Gets an interface which describes all <see cref="IRelayInput"/> linked instances on a given <see cref="IRelayOutput"/>.
+        /// </summary>
+        /// <param name="output">Ouput instance to get links</param>
+        /// <returns>Returns the linked list.</returns>
+        IOutputLinks GetOutputLinks(IRelayOutput output);
+
+        /// <summary>
+        /// Dequeue callbacks and call them.
         /// </summary>
         /// <param name="now">Timestamp to deque callbacks</param>
         void Poll(DateTime now);

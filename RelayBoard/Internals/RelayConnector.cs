@@ -27,7 +27,7 @@ namespace RelayBoard.Internals
             _lazy = lazy;
             _onDispose = onDispose;
 
-            _output.AddInput(input.Key);
+            _output.AddInput(input);
             _input.AddOutput(output);
 
             _lazy.ForceInitialize();
@@ -57,7 +57,7 @@ namespace RelayBoard.Internals
         {
             using (_lazy.Initialize())
             {
-                _output.RemoveInput(_input.Key);
+                _output.RemoveInput(_input);
                 _input.RemoveOutput(_output);
 
                 _suscriptions.ForEach(p => p.Dispose());
