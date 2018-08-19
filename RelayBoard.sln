@@ -3,13 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2018
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelayBoard", "RelayBoard\RelayBoard.csproj", "{7C09AAE7-16A2-4193-8263-E2ED41690B2F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelayBoard", "RelayBoard\RelayBoard.csproj", "{7C09AAE7-16A2-4193-8263-E2ED41690B2F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1F7781CD-1B67-46EA-9B8A-4CAB1A953060}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelayBoard.Net.Tests", "Tests\RelayBoard.Tests\RelayBoard.Net.Tests.csproj", "{D4C2FFF1-57E6-47E7-BA49-2AC46B2B1EC3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{89A23D72-EE71-44E0-A29E-AC56E33ADB5C} = {89A23D72-EE71-44E0-A29E-AC56E33ADB5C}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelayBoard.Core.Tests", "Tests\RelayBoard.Tests\RelayBoard.Core.Tests.csproj", "{89A23D72-EE71-44E0-A29E-AC56E33ADB5C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelayBoard.Core.Tests", "Tests\RelayBoard.Tests\RelayBoard.Core.Tests.csproj", "{89A23D72-EE71-44E0-A29E-AC56E33ADB5C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

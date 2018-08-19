@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using NUnit.Framework;
 using RelayBoard.Core;
@@ -45,8 +46,7 @@ namespace RelayBoard.Tests
     {
         private readonly IRelayOutput[] _dependencies;
         private PulseProbe* _pulseProbe;
-
-
+        
         public RelayOutputMock(string name, params IRelayOutput[] dependencies)
         {
             _dependencies = dependencies;
@@ -72,24 +72,6 @@ namespace RelayBoard.Tests
         public bool IsInvalidated => _pulseProbe->IsFlaged;
 
         public void Reset() => _pulseProbe->Reset();
-
-        #region Base implem
-
-        private bool _isInvalidated;
-
-        public bool IsInvalidatedBase => _isInvalidated;
-
-        public void Invalidate(DateTime timestamp)
-        {
-            _isInvalidated = true;
-        }
-
-        public void ResetBase()
-        {
-            _isInvalidated = false;
-        }
-
-        #endregion
 
         #region Overrides of Object
 
@@ -357,6 +339,92 @@ namespace RelayBoard.Tests
 
                 hash.Clear();
             }
+        }
+
+        [TestCase(750, 5000, 0.3)]
+        [TestCase(750, 5000, 0.7)]
+        [TestCase(750, 1000, 0.99)]
+        [TestCase(50, 5000, 0.5)]
+        public void Benchmark(int nbInputs, int nbOutputs, double percentOfObyI)
+        {
+            var random = new Random(42);
+
+            var inputs = new RelayInputMock[nbInputs];
+            for (var i = 0; i < inputs.Length; i++)
+                inputs[i] = new RelayInputMock("Feed" + (i + 1));
+
+            var outputs = new RelayOutputMock[nbOutputs];
+            for (var i = 0; i < outputs.Length; i++)
+                outputs[i] = new RelayOutputMock("S" + (i + 1));
+
+            var manager = new RelayBoard();
+            for (var i = 0; i < inputs.Length; i++)
+            {
+                var list = new List<string>();
+                for (var j = 0; j < outputs.Length; j++)
+                {
+                    if (random.NextDouble() <= percentOfObyI)
+                    {
+                        manager.Connect(inputs[i], outputs[j]);
+                        list.Add(outputs[j].Name);
+                    }
+                }
+            }
+
+            manager.Initialize();
+            Console.WriteLine(manager.Report());
+
+            var now = DateTime.Now;
+            var iterations = 1500;
+            var percentOfNotif = 0.77;
+
+            var stack = new Stack<string>();
+
+            var randoms = new double[iterations * inputs.Length];
+            for (var i = 0; i < iterations; i++)
+                randoms[i] = random.NextDouble();
+
+            var jitterIterations = (int)(iterations * 0.1);
+            for (int i = 0, k = 0; i < jitterIterations; i++)
+            {
+                now = now.AddSeconds(i);
+                for (var j = 0; j < inputs.Length; j++)
+                {
+                    if (randoms[k++] <= percentOfNotif)
+                    {
+                        inputs[j].Notify(now);
+                        stack.Push(inputs[j].Name);
+                    }
+                }
+
+                for (var j = 0; j < outputs.Length; j++)
+                {
+                    if(outputs[j].IsInvalidated)
+                        outputs[j].Reset();
+                }
+            }
+
+            var sw = Stopwatch.StartNew();
+            for (int i = 0, k = 0; i < iterations; i++)
+            {
+                now = now.AddSeconds(i);
+                for (var j = 0; j < inputs.Length; j++)
+                {
+                    if (randoms[k++] <= percentOfNotif)
+                    {
+                        inputs[j].Notify(now);
+                        stack.Push(inputs[j].Name);
+                    }
+                }
+
+                for (var j = 0; j < outputs.Length; j++)
+                {
+                    if (outputs[j].IsInvalidated)
+                        outputs[j].Reset();
+                }
+            }
+            sw.Stop();
+            Console.WriteLine("Elapsed: {0} ms", sw.Elapsed.TotalMilliseconds);
         }
     }
 }

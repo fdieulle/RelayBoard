@@ -154,7 +154,7 @@ namespace RelayBoard
         {
             // Todo: I should order memory to optimize dependecies calls with a contiguous memory and avoid to seek on it.
             // Todo For that and to be generic manage UpToBottom calls or BottomToUp.
-
+            
             // Todo For now it's a simple implementation
             var ppp = pPulseProbe;
             foreach (var output in outputs.Values)
@@ -164,7 +164,7 @@ namespace RelayBoard
                 var p = pFlags + offset;
                 var mask = 1 << (idx % Tools.NB_BITS_PER_BYTE);
 
-                *ppp = new PulseProbe(p, mask);
+                ppp->Initialize(p, mask);
                 output.Initialize(ppp);
                 ppp++;
             }
