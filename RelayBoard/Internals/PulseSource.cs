@@ -11,9 +11,6 @@ namespace RelayBoard.Internals
         private readonly int _maskOffset;
         private readonly ushort _maskLength;
         private ushort _index;
-        private long _lastTicks;
-
-        public long LastTicks => _lastTicks;
 
         public PulseSource(byte* flags, int maskOffset, int maskLength)
         {
@@ -21,7 +18,6 @@ namespace RelayBoard.Internals
             _maskOffset = maskOffset;
             _maskLength = (ushort)maskLength;
             _index = 0;
-            _lastTicks = DateTime.MinValue.Ticks;
         }
 
         public void UpdateMask(BitArray a)
@@ -51,9 +47,6 @@ namespace RelayBoard.Internals
             // Last loops (max 3 times) if the number of bits isn't modulo 64
             for (; _index < _maskLength; _index++)
                 *(_flags + _index) |= *(_flags + _maskOffset + _index);
-
-            // Store the timestamp.
-            _lastTicks = timestamp.Ticks;
         }
 
         #region Overrides of ValueType
