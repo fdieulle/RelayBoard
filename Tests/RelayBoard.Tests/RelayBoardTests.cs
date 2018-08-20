@@ -9,11 +9,12 @@ namespace RelayBoard.Tests
 {
     public class RelayInputMock : IRelayInput
     {
-        private readonly List<Action<DateTime>> _subscriptions = new List<Action<DateTime>>();
+        private readonly List<Action> _subscriptions = new List<Action>();
+
         #region Implementation of IRelayInput
 
         public string Name { get; }
-        public IDisposable Subscribe(Action<DateTime> onTick)
+        public IDisposable Subscribe(Action onTick)
         {
             _subscriptions.Add(onTick);
             return new AnonymousDisposable(() => { _subscriptions.Remove(onTick); });
@@ -26,10 +27,10 @@ namespace RelayBoard.Tests
             Name = name;
         }
 
-        public void Notify(DateTime timestamp)
+        public void Notify()
         {
             foreach (var subscription in _subscriptions)
-                subscription(timestamp);
+                subscription();
         }
 
         #region Overrides of Object
@@ -97,29 +98,25 @@ namespace RelayBoard.Tests
             board.Connect(input, output);
             board.Initialize();
 
-            output.Check(false, DateTime.MinValue);
+            output.Check(false);
 
-            var now = DateTime.Now;
-
-            input.Notify(now);
-            output.Check(true, now);
+            input.Notify();
+            output.Check(true);
 
             output.Reset();
-            output.Check(false, now);
+            output.Check(false);
 
-            now = now.AddSeconds(1);
-            input.Notify(now);
-            output.Check(true, now);
+            input.Notify();
+            output.Check(true);
 
-            now = now.AddSeconds(1);
-            input.Notify(now);
-            output.Check(true, now);
+            input.Notify();
+            output.Check(true);
 
             output.Reset();
-            output.Check(false, now);
+            output.Check(false);
 
             output.Reset();
-            output.Check(false, now);
+            output.Check(false);
 
             board.Dispose();
         }
@@ -141,34 +138,30 @@ namespace RelayBoard.Tests
             board.Initialize();
 
             for (var i = 0; i < nbSusbscriber; i++)
-                outputs[i].Check(false, DateTime.MinValue);
+                outputs[i].Check(false);
 
-            var now = DateTime.Now;
-
-            input.Notify(now);
+            input.Notify();
             for (var i = 0; i < nbSusbscriber; i++)
-                outputs[i].Check(true, now);
+                outputs[i].Check(true);
 
             for (var i = 0; i < nbSusbscriber; i++)
             {
                 outputs[i].Reset();
-                outputs[i].Check(false, now);
+                outputs[i].Check(false);
             }
 
-            now = now.AddSeconds(1);
-            input.Notify(now);
+            input.Notify();
             for (var i = 0; i < nbSusbscriber; i++)
-                outputs[i].Check(true, now);
+                outputs[i].Check(true);
 
-            now = now.AddSeconds(1);
-            input.Notify(now);
+            input.Notify();
             for (var i = 0; i < nbSusbscriber; i++)
-                outputs[i].Check(true, now);
+                outputs[i].Check(true);
 
             for (var i = 0; i < nbSusbscriber; i++)
             {
                 outputs[i].Reset();
-                outputs[i].Check(false, now);
+                outputs[i].Check(false);
             }
 
             board.Dispose();
@@ -191,33 +184,31 @@ namespace RelayBoard.Tests
 
             board.Initialize();
 
-            output.Check(false, DateTime.MinValue);
-
-            var now = DateTime.Now;
+            output.Check(false);
 
             for (var i = 0; i < inputs.Length; i++)
             {
-                inputs[i].Notify(now);
-                output.Check(true, now);
+                inputs[i].Notify();
+                output.Check(true);
 
                 output.Reset();
-                output.Check(false, now);
+                output.Check(false);
             }
 
             for (var i = 0; i < inputs.Length; i++)
-                inputs[i].Notify(now);
-            output.Check(true, now);
+                inputs[i].Notify();
+            output.Check(true);
 
             output.Reset();
-            output.Check(false, now);
+            output.Check(false);
 
             for (var i = 0; i < inputs.Length; i++)
             {
-                inputs[i].Notify(now);
-                output.Check(true, now);
+                inputs[i].Notify();
+                output.Check(true);
 
                 output.Reset();
-                output.Check(false, now);
+                output.Check(false);
             }
         }
 
@@ -246,17 +237,14 @@ namespace RelayBoard.Tests
 
             // Check if all subscribers are invalid first
             for (var i = 0; i < outputs.Length; i++)
-                outputs[i].Check(false, DateTime.MinValue);
+                outputs[i].Check(false);
 
-            var now = DateTime.Now;
             for (var j = 0; j < inputs.Length; j++)
             {
-                inputs[j].Notify(now.AddSeconds(j));
+                inputs[j].Notify();
                 for (var i = 0; i < outputs.Length; i++)
                 {
-                    if (i >= j) outputs[i].Check(true, now.AddSeconds(j));
-                    else outputs[i].Check(false, now.AddSeconds(i));
-
+                    outputs[i].Check(i >= j);
                     outputs[i].Reset();
                 }
             }
@@ -313,7 +301,7 @@ namespace RelayBoard.Tests
                 {
                     if (random.NextDouble() <= percentOfNotif)
                     {
-                        inputs[j].Notify(now);
+                        inputs[j].Notify();
                         stack.Push(inputs[j].Name);
                     }
                 }
@@ -324,7 +312,7 @@ namespace RelayBoard.Tests
                     foreach (var dep in deps)
                     {
                         if (hash.Contains(dep)) continue;
-                        outByName[dep].Check(true, now);
+                        outByName[dep].Check(true);
                         timestamps[dep] = now;
                         hash.Add(dep);
                     }
@@ -333,7 +321,7 @@ namespace RelayBoard.Tests
                 for (var j = 0; j < outputs.Length; j++)
                 {
                     if (!hash.Contains(outputs[i].Name))
-                        outputs[i].Check(false, timestamps[outputs[i].Name]);
+                        outputs[i].Check(false);
                     outputs[j].Reset();
                 }
 
@@ -374,7 +362,6 @@ namespace RelayBoard.Tests
             manager.Initialize();
             Console.WriteLine(manager.Report());
 
-            var now = DateTime.Now;
             var iterations = 1500;
             var percentOfNotif = 0.77;
 
@@ -387,12 +374,11 @@ namespace RelayBoard.Tests
             var jitterIterations = (int)(iterations * 0.1);
             for (int i = 0, k = 0; i < jitterIterations; i++)
             {
-                now = now.AddSeconds(i);
                 for (var j = 0; j < inputs.Length; j++)
                 {
                     if (randoms[k++] <= percentOfNotif)
                     {
-                        inputs[j].Notify(now);
+                        inputs[j].Notify();
                         stack.Push(inputs[j].Name);
                     }
                 }
@@ -407,12 +393,11 @@ namespace RelayBoard.Tests
             var sw = Stopwatch.StartNew();
             for (int i = 0, k = 0; i < iterations; i++)
             {
-                now = now.AddSeconds(i);
                 for (var j = 0; j < inputs.Length; j++)
                 {
                     if (randoms[k++] <= percentOfNotif)
                     {
-                        inputs[j].Notify(now);
+                        inputs[j].Notify();
                         stack.Push(inputs[j].Name);
                     }
                 }

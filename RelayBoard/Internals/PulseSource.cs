@@ -37,8 +37,7 @@ namespace RelayBoard.Internals
         /// <summary>
         /// Set all flags specified into the mask to 1.
         /// </summary>
-        /// <param name="timestamp">Current timestamp</param>
-        public void Pulse(DateTime timestamp)
+        public void Pulse()
         {
             // Here is the bigger gain, because we can pulse IRelayOutput 64 by 64
             for (_index = 0; _index < _maskLength - sizeof(ulong); _index += sizeof(ulong))
