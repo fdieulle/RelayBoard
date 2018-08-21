@@ -17,6 +17,6 @@ namespace RelayBoard
         /// </summary>
         /// <param name="onTick">Callback call when the relay is pulsed.</param>
         /// <returns>Returns the subscription result. Dispose it to end subscription.</returns>
-        IDisposable Subscribe(Action<DateTime> onTick);
+        IDisposable Subscribe(Action onTick);
     }
 }

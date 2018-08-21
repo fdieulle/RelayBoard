@@ -111,7 +111,7 @@ namespace RelayBoard
 
             InstallFlags(pFlags, flagsSize);
             InstallPulseProbs(pPulseProbe, pFlags, _outputInitializers);
-            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializers, _outputInitializers);
+            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializers);
 
             _runtimes.AddRange(_inputInitializers.Select(p => p.Value.CreateRuntime()));
             _queue.SetCapacity(_runtimes.Count);
@@ -154,7 +154,7 @@ namespace RelayBoard
         {
             // Todo: I should order memory to optimize dependecies calls with a contiguous memory and avoid to seek on it.
             // Todo For that and to be generic manage UpToBottom calls or BottomToUp.
-
+            
             // Todo For now it's a simple implementation
             var ppp = pPulseProbe;
             foreach (var output in outputs.Values)
@@ -164,7 +164,7 @@ namespace RelayBoard
                 var p = pFlags + offset;
                 var mask = 1 << (idx % Tools.NB_BITS_PER_BYTE);
 
-                *ppp = new PulseProbe(p, mask);
+                ppp->Initialize(p, mask);
                 output.Initialize(ppp);
                 ppp++;
             }
@@ -175,15 +175,14 @@ namespace RelayBoard
             PulseSource* pPulseSource,
             byte* pFlags,
             byte* pImpulseMask,
-            Dictionary<string, InputInitializer> initializers,
-            Dictionary<string, OutputInitializer> outputs)
+            Dictionary<string, InputInitializer> initializers)
         {
             var p = pPulseSource;
             var maskOffset = 0;
             foreach (var pair in initializers)
             {
                 var initializer = pair.Value;
-                *p = new PulseSource(
+                p->Intialize(
                     pFlags + initializer.FlagsOffset,
                     (int)(pImpulseMask - pFlags - initializer.FlagsOffset + maskOffset),
                     initializer.MaskLength);

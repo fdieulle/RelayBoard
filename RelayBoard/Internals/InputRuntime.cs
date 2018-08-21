@@ -24,14 +24,14 @@ namespace RelayBoard.Internals
                 : input.Subscribe(Pulse);
         }
 
-        private void Pulse(DateTime timestamp)
+        private void Pulse()
         {
-            _pulseSource->Pulse(timestamp);
+            _pulseSource->Pulse();
         }
 
-        private void PulseWithCallbacks(DateTime timestamp)
+        private void PulseWithCallbacks()
         {
-            _pulseSource->Pulse(timestamp);
+            _pulseSource->Pulse();
             _callbackQueue.Add(_callbacks);
         }
 

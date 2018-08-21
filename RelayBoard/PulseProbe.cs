@@ -1,16 +1,53 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace RelayBoard
 {
-    [StructLayout(LayoutKind.Sequential)]
+    /// <summary>
+    /// PulseProbe is inject in each <see cref="IRelayOutput"/> instance.
+    /// It allows to know if the associated bit is set on or off through <see cref="IsFlaged"/> readonly property.
+    /// Once the <see cref="IRelayOutput"/> wants waiting for another pulse it has to call <see cref="Reset"/> method
+    /// to set its flag to 0 (Off).
+    /// 
+    /// This structure is encoded into 4 Bytes as a simple <see cref="int"/>.
+    /// Memory specifications:
+    /// 
+    /// Bits    | Description
+    /// --------|-----------------------------
+    /// 3 bits  | Mask value to apply on flags defines like
+    ///         |
+    ///         |  bits | value |   mask
+    ///         | ------|-------|-----------
+    ///         |   000 |     0 | 00000001
+    ///         |   001 |     1 | 00000010
+    ///         |   010 |     2 | 00000100
+    ///         |   011 |     3 | 00001000
+    ///         |   100 |     4 | 00010000
+    ///         |   101 |     5 | 00100000
+    ///         |   110 |     6 | 01000000
+    ///         |   111 |     7 | 10000000
+    /// --------|-----------------------------
+    /// 1 bit   | Memory offset direction from this struct
+    ///         | 0 : + Positive offset
+    ///         | 1 : - Negative offset
+    /// --------|-----------------------------
+    /// 28 bits | Offset to retreive flags memory
+    ///         | Max offset value: 2^28 ~= 268 MB
+    ///         | 
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 4)]
     public unsafe struct PulseProbe
     {
-        // Defines the pointer where flags are stored
-        private readonly uint* _flags;
-        // Defines the mask to localize the given ouput bit.
-        private readonly uint _mask;
+        private const int SHIFT_MASK = 29;
+        private const int SHIFT_SIGN_OFFSET = 28;
+
+        private const uint SIGN_OFFSET_MASK = 0x10000000;
+        private const uint OFFSET_MASK =      0x0FFFFFFF;
+
+        [FieldOffset(0)]
+        public uint _maskAndOffset;
 
         /// <summary>
         /// Gets if the associated output has been pulsed.
@@ -18,18 +55,53 @@ namespace RelayBoard
         public bool IsFlaged
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (_mask & *_flags) == _mask;
+            get
+            {
+                var mask = GetMask();
+                return (mask & *GetFlags()) == mask;
+            }
         }
 
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="flags">The pointer wher flags are stored in memory.</param>
-        /// <param name="mask">The mask to localize the given bit into flags</param>
-        public PulseProbe(byte* flags, int mask)
+        internal void Initialize(byte* flags, int mask)
         {
-            _flags = (uint*)flags;
-            _mask = (uint)mask;
+            switch (mask)
+            {
+                case 0x1:
+                    _maskAndOffset = 0u << SHIFT_MASK;
+                    break;
+                case 0x2:
+                    _maskAndOffset = 1u << SHIFT_MASK;
+                    break;
+                case 0x4:
+                    _maskAndOffset = 2u << SHIFT_MASK;
+                    break;
+                case 0x8:
+                    _maskAndOffset = 3u << SHIFT_MASK;
+                    break;
+                case 0x10:
+                    _maskAndOffset = 4u << SHIFT_MASK;
+                    break;
+                case 0x20:
+                    _maskAndOffset = 5u << SHIFT_MASK;
+                    break;
+                case 0x40:
+                    _maskAndOffset = 6u << SHIFT_MASK;
+                    break;
+                case 0x80:
+                    _maskAndOffset = 7u << SHIFT_MASK;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mask), "The mask should have only one bit set to 1 maximum");
+            }
+
+            var offset = flags - (byte*)Unsafe.AsPointer(ref this);
+            if (offset >= OFFSET_MASK + sizeof(PulseProbe)) throw new ArgumentOutOfRangeException();
+
+            _maskAndOffset |= (offset < 0 ? 1u : 0u)  << SHIFT_SIGN_OFFSET;
+            _maskAndOffset |= (uint)Math.Abs(offset);
+
+            if(mask != GetMask() || flags != GetFlags())
+                throw new InvalidDataException("Wrong PulseProbe initialization");
         }
 
         /// <summary>
@@ -38,17 +110,34 @@ namespace RelayBoard
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset()
         {
-            // Todo: Test both performances but i suspect that the non commented is better because there is 1 load less
-            *_flags = *_flags & ~_mask;
-            //*_flags = (*_flags | _mask) ^ _mask;
+            var flags = (uint*)GetFlags();
+            *flags = *flags & ~GetMask();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte* GetFlags()
+        {
+            return (_maskAndOffset & SIGN_OFFSET_MASK) == SIGN_OFFSET_MASK
+                ? (byte*)Unsafe.AsPointer(ref this) - (_maskAndOffset & OFFSET_MASK)
+                : (byte*)Unsafe.AsPointer(ref this) + (_maskAndOffset & OFFSET_MASK);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint GetMask()
+        {
+            return 1u << (int)(_maskAndOffset >> SHIFT_MASK);
         }
 
         #region Overrides of ValueType
 
         public override string ToString()
         {
-            var m = _mask;
-            return $"Flags: {Tools.SerializeBits((byte*)_flags, sizeof(uint))}, Mask: {Tools.SerializeBits((byte*)&m, sizeof(uint))}";
+            var m = _maskAndOffset >> 21;
+            fixed (PulseProbe* p = &this)
+            {
+                var flags = (uint*)p + (_maskAndOffset & 0x1FFFFFFF);
+                return $"Flags: {Tools.SerializeBits((byte*)flags, sizeof(uint))}, Mask: {Tools.SerializeBits((byte*)&m, sizeof(uint))}";
+            }
         }
 
         #endregion
