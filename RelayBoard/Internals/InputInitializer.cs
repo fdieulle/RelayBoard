@@ -11,10 +11,10 @@ namespace RelayBoard.Internals
         private readonly ArrayEx<Action<DateTime>[]> _queue;
         private readonly Action<InputInitializer> _onDispose;
         private readonly Dictionary<string, OutputInitializer> _outputs = new Dictionary<string, OutputInitializer>();
+        private readonly List<Action<DateTime>> _callbacks = new List<Action<DateTime>>();
         private readonly BitArray _mask = new BitArray(0);
 
         private PulseSource* _pulseSource;
-        private Action<DateTime>[] _callbacks = new Action<DateTime>[0];
 
         private bool IsMaskBuilt => _mask.Length > 0;
 
@@ -30,6 +30,17 @@ namespace RelayBoard.Internals
             Input = input;
             _queue = queue;
             _onDispose = onDispose;
+        }
+
+        public IDisposable Subscribe(Action<DateTime> callback)
+        {
+            if (callback == null) return AnonymousDisposable.Empty;
+
+            _callbacks.Add(callback);
+            return new AnonymousDisposable(() =>
+            {
+                _callbacks.Remove(callback);
+            });
         }
 
         public void AddOutput(OutputInitializer output)
@@ -91,14 +102,18 @@ namespace RelayBoard.Internals
 
             // Build links and callbacks
             Outputs = _outputs.Select(p => p.Value.Output).ToArray();
-            _callbacks = _outputs.SelectMany(p => p.Value.Callbacks).Where(p => p != null).ToArray();
 
             IsInitialized = true;
         }
 
         public InputRuntime CreateRuntime()
         {
-            return new InputRuntime(_pulseSource, Input, _callbacks, _queue);
+            var compactedCallbacks = _callbacks
+                .Distinct()
+                .OrderBy(p => p.Target)
+                .ToArray();
+            
+            return new InputRuntime(_pulseSource, Input, compactedCallbacks, _queue);
         }
 
         #region Implementation of IInputLinks
@@ -106,6 +121,7 @@ namespace RelayBoard.Internals
         public bool IsInitialized { get; private set; }
         public IRelayInput Input { get; }
         public IRelayOutput[] Outputs { get; private set; }
+        public bool HasCallbacks => _callbacks.Count > 0;
 
         #endregion
 
@@ -113,6 +129,7 @@ namespace RelayBoard.Internals
         {
             _mask.Length = 0;
             _outputs.Clear();
+            _callbacks.Clear();
             Outputs = null;
             IsInitialized = false;
             _onDispose(this);

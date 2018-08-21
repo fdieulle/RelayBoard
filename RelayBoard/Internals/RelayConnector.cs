@@ -37,7 +37,7 @@ namespace RelayBoard.Internals
         {
             using (_lazy.Initialize())
             {
-                var subscription = _output.Subscribe(callback);
+                var subscription = _input.Subscribe(callback);
                 _suscriptions.Add(subscription);
 
                 return new AnonymousDisposable(() =>

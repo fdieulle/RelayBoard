@@ -225,6 +225,14 @@ namespace RelayBoard
             return initializer;
         }
 
+        public bool HasCallback(IRelayInput input)
+        {
+            if (input == null) return false;
+
+            var iKey = input.Name ?? string.Empty;
+            return _inputInitializers.TryGetValue(input.Name, out var initializer) && initializer.HasCallbacks;
+        }
+
         public void Poll(DateTime now)
         {
             if (_queue.Length <= 0) return;

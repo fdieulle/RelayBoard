@@ -37,6 +37,13 @@ namespace RelayBoard
         IOutputLinks GetOutputLinks(IRelayOutput output);
 
         /// <summary>
+        /// Check if an <see cref="IRelayInput"/> instance has at least 1 callback subscribed.
+        /// </summary>
+        /// <param name="input">Input instance to check.</param>
+        /// <returns>Returns true if at least 1 callback exists.</returns>
+        bool HasCallback(IRelayInput input);
+
+        /// <summary>
         /// Dequeue callbacks and call them.
         /// </summary>
         /// <param name="now">Timestamp to deque callbacks</param>
