@@ -17,7 +17,7 @@ namespace RelayBoard
     /// 
     /// Bits    | Description
     /// --------|-----------------------------
-    /// 3 bits  | mask value to apply on flags defines like
+    /// 3 bits  | Mask value to apply on flags defines like
     ///         |
     ///         |  bits | value |   mask
     ///         | ------|-------|-----------
@@ -30,16 +30,12 @@ namespace RelayBoard
     ///         |   110 |     6 | 01000000
     ///         |   111 |     7 | 10000000
     /// --------|-----------------------------
-    /// 1 bit   | memory offset direction from this struct
-    ///         | 0 : +
-    ///         | 1 : -
+    /// 1 bit   | Memory offset direction from this struct
+    ///         | 0 : + Positive offset
+    ///         | 1 : - Negative offset
     /// --------|-----------------------------
-    /// 2 bits  | offset % sizeof(uint) values contains into [0;4]
-    ///         | this value correspond to the number of additional bytes after uint offset.
-    /// --------|-----------------------------
-    /// 26 bits | offset to retreive flags memory
-    ///         | offset in number of uint size (4 Bytes)
-    ///         | Max offset value: 2^26 = 67 108 864 => arround 265 MB
+    /// 28 bits | Offset to retreive flags memory
+    ///         | Max offset value: 2^28 ~= 268 MB
     ///         | 
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 4)]
@@ -47,11 +43,9 @@ namespace RelayBoard
     {
         private const int SHIFT_MASK = 29;
         private const int SHIFT_SIGN_OFFSET = 28;
-        private const int SHIFT_REST_OFFSET = 26;
 
         private const uint SIGN_OFFSET_MASK = 0x10000000;
-        private const uint REST_OFFSET_MASK = 0x0C000000;
-        private const uint OFFSET_MASK =      0x03FFFFFF;
+        private const uint OFFSET_MASK =      0x0FFFFFFF;
 
         [FieldOffset(0)]
         public uint _maskAndOffset;
@@ -102,13 +96,10 @@ namespace RelayBoard
             }
 
             var offset = flags - (byte*)Unsafe.AsPointer(ref this);
-            var offsetUint = offset / sizeof(PulseProbe);
-            var offsetByte = offset % sizeof(PulseProbe);
             if (offset >= OFFSET_MASK + sizeof(PulseProbe)) throw new ArgumentOutOfRangeException();
 
             _maskAndOffset |= (offset < 0 ? 1u : 0u)  << SHIFT_SIGN_OFFSET;
-            _maskAndOffset |= (uint)Math.Abs(offsetByte) << SHIFT_REST_OFFSET;
-            _maskAndOffset |= (uint)Math.Abs(offsetUint);
+            _maskAndOffset |= (uint)Math.Abs(offset);
 
             if(mask != GetMask() || flags != GetFlags())
                 throw new InvalidDataException("Wrong PulseProbe initialization");
@@ -127,26 +118,9 @@ namespace RelayBoard
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private byte* GetFlags()
         {
-            // Todo: Compare perf
-
-            //var p = (byte*)Unsafe.AsPointer(ref this);
-            //var isNegative = (_maskAndOffset & SIGN_OFFSET_MASK) == SIGN_OFFSET_MASK;
-            //var offset1 = (_maskAndOffset & REST_OFFSET_MASK) >> SHIFT_REST_OFFSET;
-            //var offset4 = (_maskAndOffset & OFFSET_MASK);
-
             return (_maskAndOffset & SIGN_OFFSET_MASK) == SIGN_OFFSET_MASK
-                ? (byte*)((uint*)Unsafe.AsPointer(ref this) - (_maskAndOffset & OFFSET_MASK)) -
-                  ((_maskAndOffset & REST_OFFSET_MASK) >> SHIFT_REST_OFFSET)
-                : (byte*)((uint*)Unsafe.AsPointer(ref this) + (_maskAndOffset & OFFSET_MASK)) +
-                  ((_maskAndOffset & REST_OFFSET_MASK) >> SHIFT_REST_OFFSET);
-
-            //return (_maskAndOffset & SIGN_OFFSET_MASK) == SIGN_OFFSET_MASK
-            //    ? (byte*) Unsafe.AsPointer(ref this) -
-            //      (_maskAndOffset & OFFSET_MASK) * sizeof(PulseProbe) -
-            //         ((_maskAndOffset & REST_OFFSET_MASK) >> SHIFT_REST_OFFSET)
-            //    : (byte*)Unsafe.AsPointer(ref this) +
-            //      (_maskAndOffset & OFFSET_MASK) * sizeof(PulseProbe) +
-            //      ((_maskAndOffset & REST_OFFSET_MASK) >> SHIFT_REST_OFFSET);
+                ? (byte*)Unsafe.AsPointer(ref this) - (_maskAndOffset & OFFSET_MASK)
+                : (byte*)Unsafe.AsPointer(ref this) + (_maskAndOffset & OFFSET_MASK);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
