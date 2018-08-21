@@ -111,7 +111,7 @@ namespace RelayBoard
 
             InstallFlags(pFlags, flagsSize);
             InstallPulseProbs(pPulseProbe, pFlags, _outputInitializers);
-            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializers, _outputInitializers);
+            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializers);
 
             _runtimes.AddRange(_inputInitializers.Select(p => p.Value.CreateRuntime()));
             _queue.SetCapacity(_runtimes.Count);
@@ -175,8 +175,7 @@ namespace RelayBoard
             PulseSource* pPulseSource,
             byte* pFlags,
             byte* pImpulseMask,
-            Dictionary<string, InputInitializer> initializers,
-            Dictionary<string, OutputInitializer> outputs)
+            Dictionary<string, InputInitializer> initializers)
         {
             var p = pPulseSource;
             var maskOffset = 0;

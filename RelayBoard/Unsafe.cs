@@ -6,7 +6,6 @@ namespace RelayBoard
 {
     public static unsafe class Unsafe
     {
-        //    //[NonVersionable]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void* AsPointer<T>(ref T value)
         {
