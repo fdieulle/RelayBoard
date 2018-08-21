@@ -7,13 +7,16 @@ namespace RelayBoard.Internals
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct PulseSource
     {
-        private readonly byte* _flags;
-        private readonly int _maskOffset;
-        private readonly ushort _maskLength;
+        private byte* _flags;
+        private int _maskOffset;
+        private ushort _maskLength;
         private ushort _index;
 
-        public PulseSource(byte* flags, int maskOffset, int maskLength)
+        public void Intialize(byte* flags, int maskOffset, int maskLength)
         {
+            if(maskLength > ushort.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(maskLength), $"You have too many IRelayOutput linked to input. Max={(int)ushort.MaxValue * Tools.NB_BITS_PER_BYTE}, Current={maskLength * Tools.NB_BITS_PER_BYTE}");
+
             _flags = flags;
             _maskOffset = maskOffset;
             _maskLength = (ushort)maskLength;

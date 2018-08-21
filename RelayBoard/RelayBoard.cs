@@ -183,7 +183,7 @@ namespace RelayBoard
             foreach (var pair in initializers)
             {
                 var initializer = pair.Value;
-                *p = new PulseSource(
+                p->Intialize(
                     pFlags + initializer.FlagsOffset,
                     (int)(pImpulseMask - pFlags - initializer.FlagsOffset + maskOffset),
                     initializer.MaskLength);
