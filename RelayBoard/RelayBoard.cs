@@ -57,7 +57,7 @@ namespace RelayBoard
 
         private void RemoveConnector(RelayConnector connector)
         {
-            _outputInitializers.Remove(connector.Key);
+            _connectors.Remove(connector.Key);
         }
 
         #region Initialize part
