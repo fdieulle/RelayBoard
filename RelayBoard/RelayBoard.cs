@@ -115,6 +115,7 @@ namespace RelayBoard
 
             _runtimes.AddRange(_inputInitializers.Select(p => p.Value.CreateRuntime()));
             _queue.SetCapacity(_runtimes.Count);
+            _queue.Reset();
 
             #region Build Report
             _reports.Clear();
@@ -230,7 +231,7 @@ namespace RelayBoard
             if (input == null) return false;
 
             var iKey = input.Name ?? string.Empty;
-            return _inputInitializers.TryGetValue(input.Name, out var initializer) && initializer.HasCallbacks;
+            return _inputInitializers.TryGetValue(iKey, out var initializer) && initializer.HasCallbacks;
         }
 
         public void Poll(DateTime now)

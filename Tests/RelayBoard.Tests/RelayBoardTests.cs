@@ -411,5 +411,300 @@ namespace RelayBoard.Tests
             sw.Stop();
             Console.WriteLine("Elapsed: {0} ms", sw.Elapsed.TotalMilliseconds);
         }
+
+        [Test]
+        public void UnsubcribeCallbackSingleInputManyOutput()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var o1 = new RelayOutputMock("O1");
+            var o2 = new RelayOutputMock("O2");
+
+            var c1 = board.Connect(i1, o1)
+                .Subscribe(p => { });
+            var c2 = board.Connect(i1, o2)
+                .Subscribe(p => { });
+            board.Initialize();
+            Console.WriteLine(board.Report());
+
+            o1.Check(false);
+            o2.Check(false);
+
+            i1.Notify();
+            o1.Check(true);
+            o2.Check(true);
+
+            o1.Reset();
+            o2.Reset();
+            o1.Check(false);
+            o2.Check(false);
+
+            c2.Dispose();
+            Console.WriteLine(board.Report());
+
+            i1.Notify();
+            o1.Check(true);
+            o2.Check(true);
+
+            board.Dispose();
+        }
+
+        [Test]
+        public void UnsubcribeConnectorSingleInputManyOutput()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var o1 = new RelayOutputMock("O1");
+            var o2 = new RelayOutputMock("O2");
+
+            var c1 = board.Connect(i1, o1);
+            c1.Subscribe(p => { });
+            var c2 = board.Connect(i1, o2);
+            c2.Subscribe(p => { });
+
+            board.Initialize();
+            Console.WriteLine(board.Report());
+
+            o1.Check(false);
+            o2.Check(false);
+
+            i1.Notify();
+            o1.Check(true);
+            o2.Check(true);
+
+            o1.Reset();
+            o2.Reset();
+            o1.Check(false);
+            o2.Check(false);
+
+            c2.Dispose();
+            Console.WriteLine(board.Report());
+
+            i1.Notify();
+            o1.Check(true);
+            o2.Check(false);
+
+            board.Dispose();
+        }
+
+        [Test]
+        public void UnsubcribeCallbackManyInputManyOutput()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var i2 = new RelayInputMock("I2");
+            var o1 = new RelayOutputMock("O1");
+            var o2 = new RelayOutputMock("O2");
+
+            var c1 = board.Connect(i1, o1)
+                .Subscribe(p => { });
+            var c2 = board.Connect(i2, o2)
+                .Subscribe(p => { });
+            board.Initialize();
+
+            o1.Check(false);
+            o2.Check(false);
+
+            i1.Notify();
+            o1.Check(true);
+            i2.Notify();
+            o2.Check(true);
+
+            o1.Reset();
+            o2.Reset();
+            o1.Check(false);
+            o2.Check(false);
+
+            c2.Dispose();
+
+            i1.Notify();
+            o1.Check(true);
+            i2.Notify();
+            o2.Check(true);
+
+            board.Dispose();
+        }
+
+        [Test]
+        public void UnsubcribeConnectorManyInputManyOutput()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var i2 = new RelayInputMock("I2");
+            var o1 = new RelayOutputMock("O1");
+            var o2 = new RelayOutputMock("O2");
+
+            var c1 = board.Connect(i1, o1)
+                .Subscribe(p => { });
+            var c2 = board.Connect(i2, o2);
+            c2.Subscribe(p => { });
+            board.Initialize();
+
+            o1.Check(false);
+            o2.Check(false);
+
+            i1.Notify();
+            o1.Check(true);
+            i2.Notify();
+            o2.Check(true);
+
+            o1.Reset();
+            o2.Reset();
+            o1.Check(false);
+            o2.Check(false);
+
+            c2.Dispose();
+
+            i1.Notify();
+            o1.Check(true);
+            i2.Notify();
+            o2.Check(false);
+
+            board.Dispose();
+        }
+
+        [Test]
+        public void UnsubcribeConnectorManyInputSingleOutput()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var i2 = new RelayInputMock("I2");
+            var o1 = new RelayOutputMock("O1");
+
+            var c1 = board.Connect(i1, o1)
+                .Subscribe(p => { });
+            var c2 = board.Connect(i2, o1);
+            c2.Subscribe(p => { });
+            board.Initialize();
+
+            o1.Check(false);
+
+            i1.Notify();
+            o1.Check(true);
+
+            o1.Reset();
+            o1.Check(false);
+
+            i2.Notify();
+            o1.Check(true);
+
+            o1.Reset();
+            o1.Check(false);
+
+            c2.Dispose();
+
+            i1.Notify();
+            o1.Check(true);
+
+            o1.Reset();
+            o1.Check(false);
+
+            i2.Notify();
+            o1.Check(false);
+
+            board.Dispose();
+        }
+
+        [Test]
+        public void UnsubcribeCallbackManyInputSingleOutput()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var i2 = new RelayInputMock("I2");
+            var o1 = new RelayOutputMock("O1");
+
+            var c1 = board.Connect(i1, o1)
+                .Subscribe(p => { });
+            var c2 = board.Connect(i2, o1)
+                .Subscribe(p => { });
+            board.Initialize();
+
+            o1.Check(false);
+
+            i1.Notify();
+            o1.Check(true);
+
+            o1.Reset();
+            o1.Check(false);
+
+            i2.Notify();
+            o1.Check(true);
+
+            o1.Reset();
+            o1.Check(false);
+
+            c2.Dispose();
+
+            i1.Notify();
+            o1.Check(true);
+
+            o1.Reset();
+            o1.Check(false);
+
+            i2.Notify();
+            o1.Check(true);
+
+            board.Dispose();
+        }
+
+        [Test]
+        public void UnsubcribeUseCaseFailed()
+        {
+            var board = new RelayBoard();
+
+            var i1 = new RelayInputMock("I1");
+            var i2 = new RelayInputMock("I2");
+            var i3 = new RelayInputMock("I3");
+            var i4 = new RelayInputMock("I4");
+
+            var o1 = new RelayOutputMock("O1");
+
+            var c1 = board.Connect(i1, o1);
+            var s1 = c1.Subscribe(p => { });
+            var c2 = board.Connect(i2, o1);
+            var s2 = c2.Subscribe(p => { });
+            var c3 = board.Connect(i3, o1);
+            var s3 = c3.Subscribe(p => { });
+            var c4 = board.Connect(i4, o1);
+            var s4 = c4.Subscribe(p => { });
+            
+            board.Initialize();
+
+            o1.Check(false);
+
+            i1.Notify();
+            board.Poll(DateTime.Now);
+            o1.CheckAndReset(true);
+
+            i1.Notify();
+            board.Poll(DateTime.Now);
+            o1.CheckAndReset(true);
+
+            i1.Notify();
+            i2.Notify();
+            i4.Notify();
+            board.Poll(DateTime.Now);
+            o1.CheckAndReset(true);
+
+            i4.Notify();
+            board.Poll(DateTime.Now);
+            o1.CheckAndReset(true);
+
+            c2.Dispose();
+            s2.Dispose();
+
+            i4.Notify();
+            i1.Notify();
+            board.Poll(DateTime.Now);
+            o1.CheckAndReset(true);
+
+            board.Dispose();
+        }
     }
 }

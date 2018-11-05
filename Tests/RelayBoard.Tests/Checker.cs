@@ -9,5 +9,11 @@ namespace RelayBoard.Tests
         {
             Assert.AreEqual(isInvalidated, relayOutputMock.IsInvalidated, "IsFlaged");
         }
+
+        public static void CheckAndReset(this RelayOutputMock output, bool isFlaged)
+        {
+            output.Check(isFlaged);
+            output.Reset();
+        }
     }
 }

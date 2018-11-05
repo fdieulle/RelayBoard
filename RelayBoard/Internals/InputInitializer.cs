@@ -130,6 +130,7 @@ namespace RelayBoard.Internals
             _mask.Length = 0;
             _outputs.Clear();
             _callbacks.Clear();
+            _queue.Reset();
             Outputs = null;
             IsInitialized = false;
             _onDispose(this);

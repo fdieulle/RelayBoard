@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace RelayBoard.Core
 {
@@ -8,12 +9,11 @@ namespace RelayBoard.Core
         private Action _onDispose;
 
         public AnonymousDisposable(Action onDispose = null)
-        {
-            _onDispose = onDispose;
-        }
-
+            => _onDispose = onDispose;
+        
         #region IDisposable
 
+        [DebuggerStepThrough]
         public void Dispose()
         {
             _onDispose?.Invoke();

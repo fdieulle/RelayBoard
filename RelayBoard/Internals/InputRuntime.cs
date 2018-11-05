@@ -10,6 +10,8 @@ namespace RelayBoard.Internals
         private readonly ArrayEx<Action<DateTime>[]> _callbackQueue;
         private readonly IDisposable _subscription;
 
+        private int _insertIdx;
+
         public InputRuntime(
             PulseSource* pulseSource,
             IRelayInput input,
@@ -32,7 +34,11 @@ namespace RelayBoard.Internals
         private void PulseWithCallbacks()
         {
             _pulseSource->Pulse();
-            _callbackQueue.Add(_callbacks);
+            if (_insertIdx >= _callbackQueue.Length || _callbackQueue[_insertIdx] != _callbacks)
+            {
+                _insertIdx = _callbackQueue.Length;
+                _callbackQueue.Add(_callbacks);
+            }
         }
 
         #region IDisposable
