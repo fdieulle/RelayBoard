@@ -70,9 +70,9 @@ namespace RelayBoard.Tests
 
         #endregion
 
-        public bool IsInvalidated => _pulseProbe->IsFlaged;
+        public bool IsInvalidated => _pulseProbe->IsOn;
 
-        public void Reset() => _pulseProbe->Reset();
+        public void Reset() => _pulseProbe->SetOff();
 
         #region Overrides of Object
 

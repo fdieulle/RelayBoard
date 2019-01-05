@@ -10,14 +10,14 @@ namespace RelayBoard
 {
     public unsafe class RelayBoard : IRelayBoard
     {
-        private readonly Dictionary<string, InputInitializer> _inputInitializers = new Dictionary<string, InputInitializer>();
-        private readonly Dictionary<string, OutputInitializer> _outputInitializers = new Dictionary<string, OutputInitializer>();
+        private readonly Dictionary<string, InputInitializer> _inputInitializer = new Dictionary<string, InputInitializer>();
+        private readonly Dictionary<string, OutputInitializer> _outputInitializer = new Dictionary<string, OutputInitializer>();
         private readonly Dictionary<string, RelayConnector> _connectors = new Dictionary<string, RelayConnector>();
         private readonly LazyInitializer _lazyInitializer;
         private readonly ArrayEx<Action<DateTime>[]> _queue = new ArrayEx<Action<DateTime>[]>();
-        private readonly List<InputRuntime> _runtimes = new List<InputRuntime>();
+        private readonly List<InputRuntime> _runTimes = new List<InputRuntime>();
         private readonly StringBuilder _reports = new StringBuilder();
-        private bool _isIninitialized;
+        private bool _isInitialized;
         private IntPtr _globalMemory;
 
         public RelayBoard()
@@ -32,11 +32,11 @@ namespace RelayBoard
             var iKey = input.Name ?? string.Empty;
             var oKey = output.Name ?? string.Empty;
 
-            if (!_inputInitializers.TryGetValue(iKey, out var inputInitializer))
-                _inputInitializers.Add(iKey, inputInitializer = new InputInitializer(iKey, input, _queue, RemoveInputInitializer));
+            if (!_inputInitializer.TryGetValue(iKey, out var inputInitializer))
+                _inputInitializer.Add(iKey, inputInitializer = new InputInitializer(iKey, input, _queue, RemoveInputInitializer));
 
-            if (!_outputInitializers.TryGetValue(oKey, out var outputInitializer))
-                _outputInitializers.Add(oKey, outputInitializer = new OutputInitializer(oKey, output, RemoveOutputInitializer));
+            if (!_outputInitializer.TryGetValue(oKey, out var outputInitializer))
+                _outputInitializer.Add(oKey, outputInitializer = new OutputInitializer(oKey, output, RemoveOutputInitializer));
 
             var key = $"{iKey}-{oKey}";
             if (!_connectors.TryGetValue(key, out var connector))
@@ -45,54 +45,48 @@ namespace RelayBoard
             return connector;
         }
 
-        private void RemoveInputInitializer(InputInitializer input)
-        {
-            _inputInitializers.Remove(input.Key);
-        }
+        private void RemoveInputInitializer(InputInitializer input) 
+            => _inputInitializer.Remove(input.Key);
 
-        private void RemoveOutputInitializer(OutputInitializer output)
-        {
-            _outputInitializers.Remove(output.Key);
-        }
+        private void RemoveOutputInitializer(OutputInitializer output) 
+            => _outputInitializer.Remove(output.Key);
 
-        private void RemoveConnector(RelayConnector connector)
-        {
-            _connectors.Remove(connector.Key);
-        }
+        private void RemoveConnector(RelayConnector connector) 
+            => _connectors.Remove(connector.Key);
 
         #region Initialize part
 
         public void Initialize()
         {
-            if (_isIninitialized)
+            if (_isInitialized)
                 DisposeRuntime();
-            _isIninitialized = true;
+            _isInitialized = true;
 
             // Check limits
-            if (_outputInitializers.Count > ushort.MaxValue * Tools.NB_BITS_PER_BYTE) // To increase this limit change ushort type of maskLength and index into PulseSource
-                throw new OverflowException($"Max ouput capacity reached: Max={sizeof(ushort) * Tools.NB_BITS_PER_BYTE} NbOutputs={_outputInitializers.Count}");
+            if (_outputInitializer.Count > ushort.MaxValue * Tools.NB_BITS_PER_BYTE) // To increase this limit change ushort type of maskLength and index into PulseSource
+                throw new OverflowException($"Max output capacity reached: Max={sizeof(ushort) * Tools.NB_BITS_PER_BYTE} NbOutputs={_outputInitializer.Count}");
 
             // First prepare indices
-            PrepareIndices(_outputInitializers, _inputInitializers);
+            PrepareIndices(_outputInitializer, _inputInitializer);
 
             // Compute the memory length.
 
             // 1. We use 1 bit to flag a subscribe
-            var flagsSize = Ceiling(_outputInitializers.Count / Tools.NB_BITS_PER_BYTE, sizeof(uint));
+            var flagsSize = Ceiling(_outputInitializer.Count / Tools.NB_BITS_PER_BYTE, sizeof(uint));
 
-            // 2. For suscribers
+            // 2. For subscribers
             // 2.1 state size
-            var pulseProbeSize = sizeof(PulseProbe) * _outputInitializers.Count;
+            var pulseProbeSize = sizeof(PulseProbe) * _outputInitializer.Count;
 
             // 3. For producer
             // 3.1 structure layout size
-            var pulseSourceSize = sizeof(PulseSource) * _inputInitializers.Count;
+            var pulseSourceSize = sizeof(PulseSource) * _inputInitializer.Count;
             // 3.2 pImpulseMask size
-            var pulseMasksSizes = _inputInitializers.Sum(p => p.Value.MaskLength);
+            var pulseMasksSizes = _inputInitializer.Sum(p => p.Value.MaskLength);
 
             var totalSize = flagsSize + pulseProbeSize + pulseSourceSize + pulseMasksSizes;
 
-            // Alocate the memory
+            // Allocate the memory
             _globalMemory = Marshal.AllocHGlobal(totalSize);
 
             // Prepare memory
@@ -110,11 +104,11 @@ namespace RelayBoard
             var pPulseProbe = (PulseProbe*)(ptr + pulseSourceSize + flagsSize + pulseMasksSizes);
 
             InstallFlags(pFlags, flagsSize);
-            InstallPulseProbs(pPulseProbe, pFlags, _outputInitializers);
-            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializers);
+            InstallPulseProbes(pPulseProbe, pFlags, _outputInitializer);
+            InstallPulseSources(pPulseSource, pFlags, pPulseMask, _inputInitializer);
 
-            _runtimes.AddRange(_inputInitializers.Select(p => p.Value.CreateRuntime()));
-            _queue.SetCapacity(_runtimes.Count);
+            _runTimes.AddRange(_inputInitializer.Select(p => p.Value.CreateRuntime()));
+            _queue.SetCapacity(_runTimes.Count);
             _queue.Reset();
 
             #region Build Report
@@ -148,12 +142,12 @@ namespace RelayBoard
                 *(pFlags + i) = 0;
         }
 
-        private static void InstallPulseProbs(
+        private static void InstallPulseProbes(
             PulseProbe* pPulseProbe,
             byte* pFlags,
             Dictionary<string, OutputInitializer> outputs)
         {
-            // Todo: I should order memory to optimize dependecies calls with a contiguous memory and avoid to seek on it.
+            // Todo: I should order memory to optimize dependencies calls with a contiguous memory and avoid to seek on it.
             // Todo For that and to be generic manage UpToBottom calls or BottomToUp.
             
             // Todo For now it's a simple implementation
@@ -183,7 +177,7 @@ namespace RelayBoard
             foreach (var pair in initializers)
             {
                 var initializer = pair.Value;
-                p->Intialize(
+                p->Initialize(
                     pFlags + initializer.FlagsOffset,
                     (int)(pImpulseMask - pFlags - initializer.FlagsOffset + maskOffset),
                     initializer.MaskLength);
@@ -197,7 +191,7 @@ namespace RelayBoard
 
         private void LazyInitialize()
         {
-            if (_isIninitialized)
+            if (_isInitialized)
                 Initialize();
         }
 
@@ -213,7 +207,7 @@ namespace RelayBoard
             if (input == null) return null;
 
             var iKey = input.Name ?? string.Empty;
-            _inputInitializers.TryGetValue(iKey, out var initializer);
+            _inputInitializer.TryGetValue(iKey, out var initializer);
             return initializer;
         }
 
@@ -222,7 +216,7 @@ namespace RelayBoard
             if (output == null) return null;
 
             var oKey = output.Name ?? string.Empty;
-            _outputInitializers.TryGetValue(oKey, out var initializer);
+            _outputInitializer.TryGetValue(oKey, out var initializer);
             return initializer;
         }
 
@@ -231,14 +225,14 @@ namespace RelayBoard
             if (input == null) return false;
 
             var iKey = input.Name ?? string.Empty;
-            return _inputInitializers.TryGetValue(iKey, out var initializer) && initializer.HasCallbacks;
+            return _inputInitializer.TryGetValue(iKey, out var initializer) && initializer.HasCallbacks;
         }
 
         public void Poll(DateTime now)
         {
             if (_queue.Length <= 0) return;
 
-            // Process enqueued callbacks
+            // Process enqueue callbacks
             for (var i = 0; i < _queue.Length; i++)
                 for (var j = 0; j < _queue[i].Length; j++)
                     _queue[i][j](now);
@@ -254,10 +248,10 @@ namespace RelayBoard
 
         public void Dispose()
         {
-            _inputInitializers.Values.ToList().ForEach(p => p.Dispose());
-            _inputInitializers.Clear();
-            _outputInitializers.Values.ToList().ForEach(p => p.Dispose());
-            _outputInitializers.Clear();
+            _inputInitializer.Values.ToList().ForEach(p => p.Dispose());
+            _inputInitializer.Clear();
+            _outputInitializer.Values.ToList().ForEach(p => p.Dispose());
+            _outputInitializer.Clear();
             _connectors.Values.ToList().ForEach(p => p.Dispose());
             _connectors.Clear();
 
@@ -266,9 +260,9 @@ namespace RelayBoard
 
         private void DisposeRuntime()
         {
-            _isIninitialized = false;
-            _runtimes.ForEach(p => p.Dispose());
-            _runtimes.Clear();
+            _isInitialized = false;
+            _runTimes.ForEach(p => p.Dispose());
+            _runTimes.Clear();
 
             if (_globalMemory != IntPtr.Zero)
                 Marshal.FreeHGlobal(_globalMemory);

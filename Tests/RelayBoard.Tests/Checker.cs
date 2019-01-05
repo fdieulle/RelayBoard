@@ -7,7 +7,7 @@ namespace RelayBoard.Tests
     {
         public static void Check(this RelayOutputMock relayOutputMock, bool isInvalidated)
         {
-            Assert.AreEqual(isInvalidated, relayOutputMock.IsInvalidated, "IsFlaged");
+            Assert.AreEqual(isInvalidated, relayOutputMock.IsInvalidated, "IsOn");
         }
 
         public static void CheckAndReset(this RelayOutputMock output, bool isFlaged)

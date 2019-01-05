@@ -7,8 +7,8 @@ namespace RelayBoard
 {
     /// <summary>
     /// PulseProbe is inject in each <see cref="IRelayOutput"/> instance.
-    /// It allows to know if the associated bit is set on or off through <see cref="IsFlaged"/> readonly property.
-    /// Once the <see cref="IRelayOutput"/> wants waiting for another pulse it has to call <see cref="Reset"/> method
+    /// It allows to know if the associated bit is set on or off through <see cref="IsOn"/> readonly property.
+    /// Once the <see cref="IRelayOutput"/> wants waiting for another pulse it has to call <see cref="SetOff"/> method
     /// to set its flag to 0 (Off).
     /// 
     /// This structure is encoded into 4 Bytes as a simple <see cref="int"/>.
@@ -33,7 +33,7 @@ namespace RelayBoard
     ///         | 0 : + Positive offset
     ///         | 1 : - Negative offset
     /// --------|-----------------------------
-    /// 28 bits | Offset to retreive flags memory
+    /// 28 bits | Offset to retrieve flags memory
     ///         | Max offset value: 2^28 ~= 268 MB
     ///         | 
     /// </summary>
@@ -52,7 +52,7 @@ namespace RelayBoard
         /// <summary>
         /// Gets if the associated output has been pulsed.
         /// </summary>
-        public bool IsFlaged
+        public bool IsOn
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -105,10 +105,10 @@ namespace RelayBoard
         }
 
         /// <summary>
-        /// Reset associated flag.
+        /// Sets the flag off.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset()
+        public void SetOff()
         {
             var flags = (uint*)GetFlags();
             *flags = *flags & ~GetMask();

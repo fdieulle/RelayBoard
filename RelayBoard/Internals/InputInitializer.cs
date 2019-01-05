@@ -53,7 +53,7 @@ namespace RelayBoard.Internals
         {
             _outputs.Remove(output.Key);
 
-            if (IsMaskBuilt) // Todo: Do we need to keep this code in case of initlalize is call for each new connectons
+            if (IsMaskBuilt) // Todo: Do we need to keep this code in case of initialize is call for each new connections
             {
                 var mask = new BitArray(_mask.Length, true);
                 mask.Set(output.Index, false);

@@ -5,7 +5,7 @@ namespace RelayBoard
     /// <inheritdoc />
     /// <summary>
     /// Relay board connect an input with an output instance.
-    /// Pulse notifications are done asynchronously through a state which indicate the output if at least a pulse is reecived or not.
+    /// Pulse notifications are done asynchronously through a state which indicate the output if at least a pulse is received or not.
     /// </summary>
     public interface IRelayBoard : IDisposable
     {
@@ -18,7 +18,7 @@ namespace RelayBoard
         IRelayConnector Connect(IRelayInput input, IRelayOutput output);
 
         /// <summary>
-        /// Initialize all conections.
+        /// Initialize all connections.
         /// </summary>
         void Initialize();
 
@@ -32,7 +32,7 @@ namespace RelayBoard
         /// <summary>
         /// Gets an interface which describes all <see cref="IRelayInput"/> linked instances on a given <see cref="IRelayOutput"/>.
         /// </summary>
-        /// <param name="output">Ouput instance to get links</param>
+        /// <param name="output">Output instance to get links</param>
         /// <returns>Returns the linked list.</returns>
         IOutputLinks GetOutputLinks(IRelayOutput output);
 

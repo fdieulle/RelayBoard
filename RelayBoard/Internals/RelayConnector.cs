@@ -10,7 +10,7 @@ namespace RelayBoard.Internals
         private readonly OutputInitializer _output;
         private readonly LazyInitializer _lazy;
         private readonly Action<RelayConnector> _onDispose;
-        private readonly List<IDisposable> _suscriptions = new List<IDisposable>();
+        private readonly List<IDisposable> _subscriptions = new List<IDisposable>();
 
         public string Key { get; }
 
@@ -38,14 +38,14 @@ namespace RelayBoard.Internals
             using (_lazy.Initialize())
             {
                 var subscription = _input.Subscribe(callback);
-                _suscriptions.Add(subscription);
+                _subscriptions.Add(subscription);
 
                 return new AnonymousDisposable(() =>
                 {
                     using (_lazy.Initialize())
                     {
                         subscription.Dispose();
-                        _suscriptions.Remove(subscription);
+                        _subscriptions.Remove(subscription);
                     }
                 });
             }
@@ -60,8 +60,8 @@ namespace RelayBoard.Internals
                 _output.RemoveInput(_input);
                 _input.RemoveOutput(_output);
 
-                _suscriptions.ForEach(p => p.Dispose());
-                _suscriptions.Clear();
+                _subscriptions.ForEach(p => p.Dispose());
+                _subscriptions.Clear();
 
                 _onDispose(this);
             }

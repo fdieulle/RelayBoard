@@ -12,7 +12,7 @@ namespace RelayBoard.Internals
         private ushort _maskLength;
         private ushort _index;
 
-        public void Intialize(byte* flags, int maskOffset, int maskLength)
+        public void Initialize(byte* flags, int maskOffset, int maskLength)
         {
             if(maskLength > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(maskLength), $"You have too many IRelayOutput linked to input. Max={(int)ushort.MaxValue * Tools.NB_BITS_PER_BYTE}, Current={maskLength * Tools.NB_BITS_PER_BYTE}");
@@ -53,10 +53,8 @@ namespace RelayBoard.Internals
 
         #region Overrides of ValueType
 
-        public override string ToString()
-        {
-            return $"Flags: {Tools.SerializeBits(_flags, _maskLength)}, Mask: {Tools.SerializeBits(_flags + _maskOffset, _maskLength)}";
-        }
+        public override string ToString() 
+            => $"Flags: {Tools.SerializeBits(_flags, _maskLength)}, Mask: {Tools.SerializeBits(_flags + _maskOffset, _maskLength)}";
 
         #endregion
     }
